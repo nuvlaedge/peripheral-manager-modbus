@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<?xml-stylesheet href="file:///usr/bin/../share/nmap/nmap.xsl" type="text/xsl"?>
+<!-- Nmap 7.80 scan initiated Mon Dec 30 15:54:51 2019 as: nmap -&#45;script modbus-discover.nse -&#45;script-args=modbus-discover.aggressive=true -p 502 -oX lx localhost -->
+<nmaprun scanner="nmap" args="nmap -&#45;script modbus-discover.nse -&#45;script-args=modbus-discover.aggressive=true -p 502 -oX lx localhost" start="1577721291" startstr="Mon Dec 30 15:54:51 2019" version="7.80" xmloutputversion="1.04">
+    <scaninfo type="syn" protocol="tcp" numservices="1" services="502"/>
+    <verbose level="0"/>
+    <debugging level="0"/>
+    <host starttime="1577721292" endtime="1577721292"><status state="up" reason="localhost-response" reason_ttl="0"/>
+        <address addr="127.0.0.1" addrtype="ipv4"/>
+        <hostnames>
+            <hostname name="localhost" type="user"/>
+            <hostname name="localhost" type="PTR"/>
+        </hostnames>
+        <ports><port protocol="tcp" portid="502"><state state="closed" reason="reset" reason_ttl="64"/><service name="mbap" method="table" conf="3"/></port>
+        </ports>
+        <times srtt="187" rttvar="5000" to="100000"/>
+    </host>
+    <runstats><finished time="1577721292" timestr="Mon Dec 30 15:54:52 2019" elapsed="0.51" summary="Nmap done at Mon Dec 30 15:54:52 2019; 1 IP address (1 host up) scanned in 0.51 seconds" exit="success"/><hosts up="1" down="0" total="1"/>
+    </runstats>
+</nmaprun>
