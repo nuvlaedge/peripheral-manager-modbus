@@ -19,7 +19,21 @@ import struct
 import os
 import xmltodict
 import logging
+import sys
 from threading import Event
+
+
+def init_logger():
+    """ Initializes logging """
+
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    root.addHandler(handler)
 
 
 def get_default_gateway_ip():
@@ -52,9 +66,10 @@ def scan_open_ports(host, modbus_nse="modbus-discover.nse", xml_file="/tmp/nmap_
 
     logging.info("Scanning open ports...")
 
-    command = "nmap --script {} --script-args='modbus-discover.aggressive=true' -p- {} -T4 -oX {}".format(modbus_nse,
-                                                                                                          host,
-                                                                                                          xml_file)
+    command = "nmap --script {} --script-args='modbus-discover.aggressive=true' -p- {} -T4 -oX {} &>/dev/null"\
+        .format(modbus_nse,
+                host,
+                xml_file)
 
     os.system(command)
 
@@ -90,44 +105,46 @@ def parse_modbus_peripherals(namp_xml_output):
         return modbus
 
     for port in all_ports:
-        if port['service']['@name'] == "modbus":
-            modbus_device_base = {
-                "interface": port['protocol'].upper() if "protocol" in port else None,
-                "port": port.get("@portid", None),
-                "available": True if port['state']['@state'] == "open" else False
-            }
+        if port['service']['@name'] != "modbus":
+            continue
 
-            output = port['script']['table']
-            if not isinstance(output, list):
-                output = [output]
+        modbus_device_base = {
+            "interface": port['@protocol'].upper() if "@protocol" in port else None,
+            "port": port.get("@portid", None),
+            "available": True if port['state']['@state'] == "open" else False
+        }
 
-            for address in output:
-                slave_id = int(address['@key'].split()[1], 16)
-                elements_list = address['elem']
-                classes = None
-                device_identification = None
-                for elem in elements_list:
-                    if elem['@key'] == "Slave ID data":
-                        classes = [str(elem.get('#text'))]
-                    elif elem['@key'] == 'Device identification':
-                        device_identification = elem.get('#text')
-                    else:
-                        logging.warning("Modbus device with slave ID {} cannot be categorized: {}").format(slave_id,
-                                                                                                           elem)
-                modbus_device_merge = { **modbus_device_base,
-                                        "classes": classes,
-                                        "identifier": slave_id,
-                                        "vendor": device_identification,
-                                        "name": "Modbus {}/{} {}".format(modbus_device_base['port'], port['protocol'],
-                                                                         ' '.join(classes))
-                                        }
+        output = port['script']['table']
+        if not isinstance(output, list):
+            output = [output]
 
-                modbus_device_final = {k: v for k, v in modbus_device_merge.items() if v is not None}
+        for address in output:
+            slave_id = int(address['@key'].split()[1], 16)
+            elements_list = address['elem']
+            classes = None
+            device_identification = None
+            for elem in elements_list:
+                if elem['@key'] == "Slave ID data":
+                    classes = [str(elem.get('#text'))]
+                elif elem['@key'] == 'Device identification':
+                    device_identification = elem.get('#text')
+                else:
+                    logging.warning("Modbus device with slave ID {} cannot be categorized: {}").format(slave_id,
+                                                                                                       elem)
+            modbus_device_merge = { **modbus_device_base,
+                                    "classes": classes,
+                                    "identifier": slave_id,
+                                    "vendor": device_identification,
+                                    "name": "Modbus {}/{} {}".format(modbus_device_base['port'], port.get('@protocol'),
+                                                                     ' '.join(classes))
+                                    }
 
-                # add final modbus device to list of devices
-                modbus.append(modbus_device_final)
+            modbus_device_final = {k: v for k, v in modbus_device_merge.items() if v is not None}
 
-                logging.info("modbus device found {}".format(modbus_device_final))
+            # add final modbus device to list of devices
+            modbus.append(modbus_device_final)
+
+            logging.info("modbus device found {}".format(modbus_device_final))
 
     return modbus
 
