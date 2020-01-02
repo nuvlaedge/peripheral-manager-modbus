@@ -10,5 +10,4 @@ services:
     labels:
       - nuvlabox.component=True
       - nuvlabox.deployment=production
-    network_mode: host
 
