@@ -21,6 +21,25 @@ import xmltodict
 import logging
 import sys
 from threading import Event
+from nuvla.api import Api
+
+
+nuvla_endpoint_raw = os.environ["NUVLA_ENDPOINT"] if "NUVLA_ENDPOINT" in os.environ else "nuvla.io"
+while nuvla_endpoint_raw[-1] == "/":
+    nuvla_endpoint_raw = nuvla_endpoint_raw[:-1]
+
+nuvla_endpoint = nuvla_endpoint_raw.replace("https://", "")
+
+nuvla_endpoint_insecure_raw = os.environ["NUVLA_ENDPOINT_INSECURE"] if "NUVLA_ENDPOINT_INSECURE" in os.environ else False
+if isinstance(nuvla_endpoint_insecure_raw, str):
+    if nuvla_endpoint_insecure_raw.lower() == "false":
+        nuvla_endpoint_insecure_raw = False
+    else:
+        nuvla_endpoint_insecure_raw = True
+else:
+    nuvla_endpoint_insecure_raw = bool(nuvla_endpoint_insecure_raw)
+
+nuvla_endpoint_insecure = nuvla_endpoint_insecure_raw
 
 
 def init_logger():
@@ -34,6 +53,23 @@ def init_logger():
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
     root.addHandler(handler)
+
+
+def authenticate(api_key, secret_key):
+    """ Creates a user session
+
+    :param api_key: API key
+    :param secret_key: API secret
+
+    :returns authenticated API object instance
+    """
+
+    api_instance = Api(endpoint='https://{}'.format(nuvla_endpoint),
+                       insecure=nuvla_endpoint_insecure, reauthenticate=True)
+    logging.info('Authenticate with "{}"'.format(api_key))
+    logging.info(api_instance.login_apikey(api_key, secret_key))
+
+    return api_instance
 
 
 def get_default_gateway_ip():
@@ -154,6 +190,8 @@ if __name__ == "__main__":
 
     init_logger()
 
+    socket.setdefaulttimeout(20)
+
     gateway_ip = get_default_gateway_ip()
 
     # Runs the modbus discovery functions periodically
@@ -167,6 +205,21 @@ if __name__ == "__main__":
         all_modbus_devices = parse_modbus_peripherals(namp_xml_output)
 
         # TODO: POST device to Nuvla
+        #
+        # api_key and secret_key exist?
+        # shared_directory=${SHARED:-/srv/nuvlabox/shared}
+        #
+        # api_key=$(jq -r '."api-key"' ${shared_directory}/.activated)
+        # secret_key=$(jq -r '."secret-key"' ${shared_directory}/.activated)
+        #
+        # if [[ ! -z ${NUVLA_ENDPOINT_INSECURE} ]]
+        # then
+        # extra_flags="-k"
+        # else
+        # extra_flags=""
+        # fi
+
+        # api = authenticate(api_key, secret_key)
 
         e.wait(timeout=120)
 
