@@ -105,7 +105,7 @@ def parse_modbus_peripherals(namp_xml_output):
         return modbus
 
     for port in all_ports:
-        if port['service']['@name'] != "modbus":
+        if 'service' not in port or port['service']['@name'] != "modbus":
             continue
 
         modbus_device_base = {
@@ -150,6 +150,8 @@ def parse_modbus_peripherals(namp_xml_output):
 
 
 if __name__ == "__main__":
+
+    init_logger()
 
     gateway_ip = get_default_gateway_ip()
 
