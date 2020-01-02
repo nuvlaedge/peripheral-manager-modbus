@@ -135,8 +135,9 @@ def parse_modbus_peripherals(namp_xml_output):
                                     "classes": classes,
                                     "identifier": slave_id,
                                     "vendor": device_identification,
-                                    "name": "Modbus {}/{} {}".format(modbus_device_base['port'], port.get('@protocol'),
-                                                                     ' '.join(classes))
+                                    "name": "Modbus {}/{} {} - {}".format(modbus_device_base['port'], port.get('@protocol'),
+                                                                          ' '.join(classes),
+                                                                          slave_id)
                                     }
 
             modbus_device_final = {k: v for k, v in modbus_device_merge.items() if v is not None}
