@@ -7,7 +7,6 @@ services:
     volumes:
       - nuvlabox-db:/srv/nuvlabox/shared
     environment:
-      - NUVLABOX_UUID=${NUVLABOX_UUID}
       - NUVLA_ENDPOINT=${NUVLA_ENDPOINT:-nuvla.io}
       - NUVLA_ENDPOINT_INSECURE=${NUVLA_ENDPOINT_INSECURE:-False}
     labels:

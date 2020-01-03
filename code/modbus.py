@@ -22,7 +22,7 @@ import logging
 import sys
 import json
 import requests
-import nuvla
+import nuvla.api
 from threading import Event
 
 
