@@ -4,9 +4,12 @@ services:
   peripheral-manager-modbus:
     build: .
     restart: on-failure
+    volumes:
+      - nuvlabox-db:/srv/nuvlabox/shared
     environment:
       - NUVLABOX_UUID=${NUVLABOX_UUID}
-      - NUVLA_ENDPOINT=nuvla.io
+      - NUVLA_ENDPOINT=${NUVLA_ENDPOINT:-nuvla.io}
+      - NUVLA_ENDPOINT_INSECURE=${NUVLA_ENDPOINT_INSECURE:-False}
     labels:
       - nuvlabox.component=True
       - nuvlabox.deployment=production
