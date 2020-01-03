@@ -70,7 +70,10 @@ def authenticate(api_key, secret_key):
     api_instance = nuvla.api.Api(endpoint='https://{}'.format(nuvla_endpoint),
                        insecure=nuvla_endpoint_insecure, reauthenticate=True)
     logging.info('Authenticate with "{}"'.format(api_key))
-    logging.info(api_instance.login_apikey(api_key, secret_key))
+    r = api_instance.login_apikey(api_key, secret_key)
+    if r.status_code == 403:
+        logging.error("Cannot login into Nuvla with API key {}".format(api_key))
+        sys.exit(1)
 
     return api_instance
 
@@ -328,7 +331,6 @@ if __name__ == "__main__":
 
         all_modbus_devices = parse_modbus_peripherals(namp_xml_output)
 
-        # TODO: POST device to Nuvla
         manage_modbus_peripherals(peripherals_dir, all_modbus_devices, api, nuvlabox_id)
 
         e.wait(timeout=120)
