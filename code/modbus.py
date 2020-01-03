@@ -152,7 +152,7 @@ def parse_modbus_peripherals(namp_xml_output):
 
         modbus_device_base = {
             "interface": port['@protocol'].upper() if "@protocol" in port else None,
-            "port": port.get("@portid", None),
+            "port": int(port["@portid"]) if "@portid" in port else None,
             "available": True if port['state']['@state'] == "open" else False
         }
 
