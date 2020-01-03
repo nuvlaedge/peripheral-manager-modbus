@@ -237,7 +237,7 @@ def manage_modbus_peripherals(peripherals_path, peripherals, api, nb_context):
         identifier = per.get("identifier")
 
         filename_termination = "{}.{}.{}".format(port, interface, identifier)
-        full_filename = "{}.{}".format(modbus_files_basepath, filename_termination)
+        full_filename = "{}{}".format(modbus_files_basepath, filename_termination)
         if full_filename in local_modbus_files:
             # device is discovered, and already reported, so nothing to do here
             local_modbus_files.remove(full_filename)
@@ -336,6 +336,6 @@ if __name__ == "__main__":
 
         manage_modbus_peripherals(peripherals_dir, all_modbus_devices, api, nuvlabox_context)
 
-        e.wait(timeout=120)
+        e.wait(timeout=90)
 
 
