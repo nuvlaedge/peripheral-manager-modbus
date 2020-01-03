@@ -175,7 +175,7 @@ def parse_modbus_peripherals(namp_xml_output):
                                                                                                        elem)
             modbus_device_merge = { **modbus_device_base,
                                     "classes": classes,
-                                    "identifier": slave_id,
+                                    "identifier": str(slave_id),
                                     "vendor": device_identification,
                                     "name": "Modbus {}/{} {} - {}".format(modbus_device_base['port'], port.get('@protocol'),
                                                                           ' '.join(classes),
