@@ -17,6 +17,7 @@ It provides:
 import socket
 import struct
 import os
+import glob
 import xmltodict
 import logging
 import sys
@@ -221,8 +222,8 @@ def manage_modbus_peripherals(peripherals_path, peripherals, api, nb_id):
     # local file naming convention:
     #    modbus.{port}.{interface}.{identifier}
 
-    modbus_files_basepath = "{}/modbus.".format(shared)
-    local_modbus_files = os.listdir(modbus_files_basepath)
+    modbus_files_basepath = "{}/modbus.".format(peripherals_path)
+    local_modbus_files = glob.glob(modbus_files_basepath+'*')
 
     for per in peripherals:
         port = per.get("port", "nullport")
@@ -230,7 +231,7 @@ def manage_modbus_peripherals(peripherals_path, peripherals, api, nb_id):
         identifier = per.get("identifier")
 
         filename_termination = "{}.{}.{}".format(port, interface, identifier)
-        full_filename = "modbus.{}".format(filename_termination)
+        full_filename = "{}.{}".format(modbus_files_basepath, filename_termination)
         if full_filename in local_modbus_files:
             # device is discovered, and already reported, so nothing to do here
             local_modbus_files.remove(full_filename)
@@ -241,7 +242,7 @@ def manage_modbus_peripherals(peripherals_path, peripherals, api, nb_id):
             try:
                 nuvla_peripheral_post_response = api._cimi_post("nuvlabox-peripheral", json=payload)
                 nuvla_peripheral_id = nuvla_peripheral_post_response["resource-id"]
-                with open("{}{}".format(modbus_files_basepath, filename_termination), 'w') as mf:
+                with open(full_filename, 'w') as mf:
                     mf.write(json.dumps({**payload, "id": nuvla_peripheral_id}))
 
                 logging.info("Created new NuvlaBox Modbus peripheral {} with ID {}".format(filename_termination,
@@ -253,10 +254,11 @@ def manage_modbus_peripherals(peripherals_path, peripherals, api, nb_id):
         # the leftover files are devices that have not been detected anymore,
         # and thus should be deleted
         try:
-            with open("{}/{}".format(peripherals_path, old_modbus_file)) as omf:
+            with open(old_modbus_file) as omf:
                 nuvla_peripheral_id_rm = json.loads(omf.read())["id"]
         except FileNotFoundError:
-            logging.warning("{} file not found locally. Obsolete Nuvla peripheral resource might not be cleaned properly")
+            logging.warning("{} not found locally. Obsolete Nuvla peripheral resource might not be cleaned properly"
+                            .format(old_modbus_file))
             continue
         except:
             logging.exception("Unknown error while deleting obsolete peripherals...moving on")
@@ -285,9 +287,9 @@ def manage_modbus_peripherals(peripherals_path, peripherals, api, nb_id):
         try:
             os.remove(old_modbus_file)
         except FileNotFoundError:
-            logging.warning("{} has already been removed externally. Deletion is complete anyway".format(old_modbus_file))
+            logging.warning("{} has already been removed. Deletion is complete anyway".format(old_modbus_file))
         except:
-            logging.exception("Cannot delete local file {}. Will try again ")
+            logging.exception("Cannot delete local file {}. Will try again".format(old_modbus_file))
 
 
 if __name__ == "__main__":
