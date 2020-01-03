@@ -213,7 +213,7 @@ def wait_for_bootstrap(shared):
     return activated, peripherals_dir
 
 
-def manage_modbus_peripherals(peripherals_path, peripherals, api, nb_id):
+def manage_modbus_peripherals(peripherals_path, peripherals, api, nb_context):
     """ Takes care of posting or deleting the respective
     NB peripheral resources from Nuvla
 
@@ -224,6 +224,9 @@ def manage_modbus_peripherals(peripherals_path, peripherals, api, nb_id):
 
     # local file naming convention:
     #    modbus.{port}.{interface}.{identifier}
+
+    nb_id = nb_context["id"]
+    nb_version = nb_context["version"]
 
     modbus_files_basepath = "{}/modbus.".format(peripherals_path)
     local_modbus_files = glob.glob(modbus_files_basepath+'*')
@@ -241,7 +244,7 @@ def manage_modbus_peripherals(peripherals_path, peripherals, api, nb_id):
         else:
             # filename is not saved locally, which means it is newly discovered
             # thus report to Nuvla
-            payload = {**per, "parent": nb_id}
+            payload = {**per, "parent": nb_id, "version": nb_version}
             try:
                 nuvla_peripheral_post_response = api._cimi_post("nuvlabox-peripheral", json=payload)
                 nuvla_peripheral_id = nuvla_peripheral_post_response["resource-id"]
@@ -313,7 +316,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     with open("{}/.context".format(shared)) as c:
-        nuvlabox_id = json.loads(c.read())["id"]
+        nuvlabox_context = json.loads(c.read())
 
     socket.setdefaulttimeout(20)
 
@@ -331,7 +334,7 @@ if __name__ == "__main__":
 
         all_modbus_devices = parse_modbus_peripherals(namp_xml_output)
 
-        manage_modbus_peripherals(peripherals_dir, all_modbus_devices, api, nuvlabox_id)
+        manage_modbus_peripherals(peripherals_dir, all_modbus_devices, api, nuvlabox_context)
 
         e.wait(timeout=120)
 
