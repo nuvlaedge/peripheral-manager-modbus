@@ -24,6 +24,7 @@ import sys
 import json
 import requests
 import nuvla.api
+import time
 from threading import Event
 
 
@@ -53,7 +54,7 @@ def init_logger():
 
     handler = logging.StreamHandler(sys.stdout)
     handler.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    formatter = logging.Formatter('%(levelname)s - %(funcName)s - %(message)s')
     handler.setFormatter(formatter)
     root.addHandler(handler)
 
@@ -305,8 +306,19 @@ if __name__ == "__main__":
     shared = "/srv/nuvlabox/shared"
     activation_file, peripherals_dir = wait_for_bootstrap(shared)
 
-    with open(activation_file) as af:
+    af = open(activation_file)
+    try:
         api_credential = json.loads(af.read())
+    except json.decoder.JSONDecodeError as e:
+        logging.warning("Possible race condition while getting credentials from %s. Trying again" % activation_file)
+        time.sleep(1)
+        af.seek(0)
+        api_credential = json.loads(af.read())
+    except:
+        logging.exception("Cannot read NuvlaBox credentials from %s. Exiting..." % activation_file)
+        sys.exit(1)
+
+    af.close()
 
     try:
         apikey = api_credential["api-key"]
