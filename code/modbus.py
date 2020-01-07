@@ -203,6 +203,7 @@ def wait_for_bootstrap(shared):
 
     peripherals_dir = "{}/.peripherals".format(shared)
     activated = "{}/.activated".format(shared)
+    context = "{}/.context".format(shared)
 
     logging.info("Checking if NuvlaBox has been initialized...")
     while not os.path.isdir(peripherals_dir):
@@ -211,7 +212,10 @@ def wait_for_bootstrap(shared):
     while not os.path.isfile(activated):
         continue
 
-    return activated, peripherals_dir
+    while not os.path.isfile(context):
+        continue
+
+    return activated, peripherals_dir, context
 
 
 def manage_modbus_peripherals(peripherals_path, peripherals, api, nb_context):
@@ -304,21 +308,26 @@ if __name__ == "__main__":
     init_logger()
 
     shared = "/srv/nuvlabox/shared"
-    activation_file, peripherals_dir = wait_for_bootstrap(shared)
+    activation_file, peripherals_dir, context_file = wait_for_bootstrap(shared)
 
     af = open(activation_file)
+    c = open(context_file)
     try:
         api_credential = json.loads(af.read())
+        nuvlabox_context = json.loads(c.read())
     except json.decoder.JSONDecodeError as e:
-        logging.warning("Possible race condition while getting credentials from %s. Trying again" % activation_file)
+        logging.warning("Possible race condition while reading %s and %s. Re-trying" % (activation_file, context_file))
         time.sleep(1)
         af.seek(0)
         api_credential = json.loads(af.read())
+        c.seek(0)
+        nuvlabox_context = json.loads(c.read())
     except:
-        logging.exception("Cannot read NuvlaBox credentials from %s. Exiting..." % activation_file)
+        logging.exception("Cannot read JSON from %s and %s. Exiting..." % (activation_file, context_file))
         sys.exit(1)
 
     af.close()
+    c.close()
 
     try:
         apikey = api_credential["api-key"]
@@ -326,9 +335,6 @@ if __name__ == "__main__":
     except KeyError:
         logging.exception("Cannot load Nuvla credentials")
         sys.exit(1)
-
-    with open("{}/.context".format(shared)) as c:
-        nuvlabox_context = json.loads(c.read())
 
     socket.setdefaulttimeout(20)
 
