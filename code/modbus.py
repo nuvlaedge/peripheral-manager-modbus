@@ -24,7 +24,7 @@ import requests
 import time
 from threading import Event
 
-api_endpoint = "http://agent:5000/api/peripheral"
+api_endpoint = "http://agent/api/peripheral"
 
 
 def init_logger():
@@ -162,10 +162,12 @@ def wait_for_bootstrap():
 
     logging.info("Checking if NuvlaBox has been initialized...")
 
-    r = requests.get("http://agent:5000/api/healthcheck")
+    healthcheck_endpoint = "http://agent/api/healthcheck"
+
+    r = requests.get(healthcheck_endpoint)
     while not r.ok:
         time.sleep(5)
-        r = requests.get("http://agent:5000/api/healthcheck")
+        r = requests.get(healthcheck_endpoint)
 
     return
 
