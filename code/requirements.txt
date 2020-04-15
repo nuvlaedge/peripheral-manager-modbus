@@ -1,5 +1,4 @@
 xmltodict
 pymodbus
 paho-mqtt
-nuvla-api
 requests

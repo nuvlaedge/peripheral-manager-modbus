@@ -17,33 +17,14 @@ It provides:
 import socket
 import struct
 import os
-import glob
 import xmltodict
 import logging
 import sys
-import json
 import requests
-import nuvla.api
 import time
 from threading import Event
 
-
-nuvla_endpoint_raw = os.environ["NUVLA_ENDPOINT"] if "NUVLA_ENDPOINT" in os.environ else "nuvla.io"
-while nuvla_endpoint_raw[-1] == "/":
-    nuvla_endpoint_raw = nuvla_endpoint_raw[:-1]
-
-nuvla_endpoint = nuvla_endpoint_raw.replace("https://", "")
-
-nuvla_endpoint_insecure_raw = os.environ["NUVLA_ENDPOINT_INSECURE"] if "NUVLA_ENDPOINT_INSECURE" in os.environ else False
-if isinstance(nuvla_endpoint_insecure_raw, str):
-    if nuvla_endpoint_insecure_raw.lower() == "false":
-        nuvla_endpoint_insecure_raw = False
-    else:
-        nuvla_endpoint_insecure_raw = True
-else:
-    nuvla_endpoint_insecure_raw = bool(nuvla_endpoint_insecure_raw)
-
-nuvla_endpoint_insecure = nuvla_endpoint_insecure_raw
+api_endpoint = "http://agent:5000/api/peripheral"
 
 
 def init_logger():
@@ -57,26 +38,6 @@ def init_logger():
     formatter = logging.Formatter('%(levelname)s - %(funcName)s - %(message)s')
     handler.setFormatter(formatter)
     root.addHandler(handler)
-
-
-def authenticate(api_key, secret_key):
-    """ Creates a user session
-
-    :param api_key: API key
-    :param secret_key: API secret
-
-    :returns authenticated API object instance
-    """
-
-    api_instance = nuvla.api.Api(endpoint='https://{}'.format(nuvla_endpoint),
-                       insecure=nuvla_endpoint_insecure, reauthenticate=True)
-    logging.info('Authenticate with "{}"'.format(api_key))
-    r = api_instance.login_apikey(api_key, secret_key)
-    if r.status_code == 403:
-        logging.error("Cannot login into Nuvla with API key {}".format(api_key))
-        sys.exit(1)
-
-    return api_instance
 
 
 def get_default_gateway_ip():
@@ -193,152 +154,72 @@ def parse_modbus_peripherals(namp_xml_output):
     return modbus
 
 
-def wait_for_bootstrap(shared):
-    """ Simply waits for the NuvlaBox to finish bootstrapping
+def wait_for_bootstrap():
+    """ Simply waits for the NuvlaBox to finish bootstrapping, by pinging the Agent API
 
-    :param shared: base path for the shared NB directory
-    :returns path for the activation file where Nuvla credentials are
-    :returns path for the folder where all the peripheral files are saved
+    :returns
     """
 
-    peripherals_dir = "{}/.peripherals".format(shared)
-    activated = "{}/.activated".format(shared)
-    context = "{}/.context".format(shared)
-
     logging.info("Checking if NuvlaBox has been initialized...")
-    while not os.path.isdir(peripherals_dir):
-        continue
 
-    while not os.path.isfile(activated):
-        continue
+    r = requests.get("http://agent:5000/api/healthcheck")
+    while not r.ok:
+        time.sleep(5)
+        r = requests.get("http://agent:5000/api/healthcheck")
 
-    while not os.path.isfile(context):
-        continue
-
-    return activated, peripherals_dir, context
+    return
 
 
-def manage_modbus_peripherals(peripherals_path, peripherals, api, nb_context):
+def manage_modbus_peripherals(peripherals):
     """ Takes care of posting or deleting the respective
     NB peripheral resources from Nuvla
 
     :param peripherals_path: base path for the NB shared directory
     :param peripherals: list of dict, one for each discovered modbus slave
-    :param api: authenticated api obj instance for posting and deleting Nuvla resources
     """
 
     # local file naming convention:
     #    modbus.{port}.{interface}.{identifier}
 
-    nb_id = nb_context["id"]
-    nb_version = nb_context["version"]
+    modbus_identifier_pattern = "modbus.*"
+    # Ask the NB agent for all modbus peripherals matching this pattern
+    get_modbus_peripherals = requests.get(api_endpoint + '?identifier_pattern=' + modbus_identifier_pattern)
+    if not get_modbus_peripherals.ok or not isinstance(get_modbus_peripherals.json(), list):
+        return
 
-    modbus_files_basepath = "{}/modbus.".format(peripherals_path)
-    local_modbus_files = glob.glob(modbus_files_basepath+'*')
-
+    local_modbus_peripherals = get_modbus_peripherals.json()
     for per in peripherals:
         port = per.get("port", "nullport")
         interface = per.get("interface", "nullinterface")
-        identifier = per.get("identifier")
+        identifier = "{}.{}.{}".format(port, interface, per.get("identifier"))
+        # Redefine the identifier
+        per['identifier'] = identifier
 
-        filename_termination = "{}.{}.{}".format(port, interface, identifier)
-        full_filename = "{}{}".format(modbus_files_basepath, filename_termination)
-        if full_filename in local_modbus_files:
+        if identifier in local_modbus_peripherals:
             # device is discovered, and already reported, so nothing to do here
-            local_modbus_files.remove(full_filename)
+            local_modbus_peripherals.remove(identifier)
         else:
             # filename is not saved locally, which means it is newly discovered
             # thus report to Nuvla
-            payload = {**per, "parent": nb_id, "version": nb_version}
             try:
-                nuvla_peripheral_post_response = api._cimi_post("nuvlabox-peripheral", json=payload)
-                nuvla_peripheral_id = nuvla_peripheral_post_response["resource-id"]
-                with open(full_filename, 'w') as mf:
-                    mf.write(json.dumps({**payload, "id": nuvla_peripheral_id}))
+                nuvla_peripheral_id = requests.post(api_endpoint, json=per).json()["resource-id"]
 
-                logging.info("Created new NuvlaBox Modbus peripheral {} with ID {}".format(filename_termination,
+                logging.info("Created new NuvlaBox Modbus peripheral {} with ID {}".format(identifier,
                                                                                            nuvla_peripheral_id))
             except:
-                logging.exception("Cannot create Modbus peripheral {} in Nuvla...moving on".format(filename_termination))
+                logging.exception("Cannot create Modbus peripheral {} in Nuvla...moving on".format(identifier))
 
-    for old_modbus_file in local_modbus_files:
+    for old_modbus_file in local_modbus_peripherals:
         # the leftover files are devices that have not been detected anymore,
         # and thus should be deleted
-        try:
-            with open(old_modbus_file) as omf:
-                nuvla_peripheral_id_rm = json.loads(omf.read())["id"]
-        except FileNotFoundError:
-            logging.warning("{} not found locally. Obsolete Nuvla peripheral resource might not be cleaned properly"
-                            .format(old_modbus_file))
-            continue
-        except:
-            logging.exception("Unknown error while deleting obsolete peripherals...moving on")
-            continue
-
-        try:
-            api._cimi_delete(nuvla_peripheral_id_rm)
-        except requests.exceptions.ConnectionError as conn_err:
-            logging.error("Can not reach out to Nuvla. Error: {}".format(conn_err))
-            return
-        except nuvla.api.api.NuvlaError as e:
-            if e.response.status_code == 404:
-                logging.info("{} does not exist in Nuvla anymore. Moving on...".format(nuvla_peripheral_id_rm))
-            else:
-                logging.exception("Unknown Nuvla exception - cannot delete {}".format(nuvla_peripheral_id_rm))
-                continue
-        except:
-            logging.exception("Cannot delete {} from Nuvla. Attempting to edit it...".format(nuvla_peripheral_id_rm))
-            try:
-                api._cimi_put(nuvla_peripheral_id_rm, json={"available": False})
-                continue
-            except:
-                logging.exception("Cannot modify {} in Nuvla. Will try again later".format(nuvla_peripheral_id_rm))
-                continue
-
-        try:
-            os.remove(old_modbus_file)
-        except FileNotFoundError:
-            logging.warning("{} has already been removed. Deletion is complete anyway".format(old_modbus_file))
-        except:
-            logging.exception("Cannot delete local file {}. Will try again".format(old_modbus_file))
+        r = requests.delete(api_endpoint + "/" + old_modbus_file)
 
 
 if __name__ == "__main__":
 
     init_logger()
 
-    shared = "/srv/nuvlabox/shared"
-    activation_file, peripherals_dir, context_file = wait_for_bootstrap(shared)
-
-    af = open(activation_file)
-    c = open(context_file)
-    try:
-        api_credential = json.loads(af.read())
-        nuvlabox_context = json.loads(c.read())
-    except json.decoder.JSONDecodeError as e:
-        logging.warning("Possible race condition while reading %s and %s. Re-trying" % (activation_file, context_file))
-        time.sleep(1)
-        af.seek(0)
-        api_credential = json.loads(af.read())
-        c.seek(0)
-        nuvlabox_context = json.loads(c.read())
-    except:
-        logging.exception("Cannot read JSON from %s and %s. Exiting..." % (activation_file, context_file))
-        sys.exit(1)
-
-    af.close()
-    c.close()
-
-    try:
-        apikey = api_credential["api-key"]
-        apisecret = api_credential["secret-key"]
-    except KeyError:
-        logging.exception("Cannot load Nuvla credentials")
-        sys.exit(1)
-
-    socket.setdefaulttimeout(20)
-
-    api = authenticate(apikey, apisecret)
+    wait_for_bootstrap()
 
     gateway_ip = get_default_gateway_ip()
 
@@ -352,7 +233,7 @@ if __name__ == "__main__":
 
         all_modbus_devices = parse_modbus_peripherals(namp_xml_output)
 
-        manage_modbus_peripherals(peripherals_dir, all_modbus_devices, api, nuvlabox_context)
+        manage_modbus_peripherals(all_modbus_devices)
 
         e.wait(timeout=90)
 
