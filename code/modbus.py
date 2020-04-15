@@ -191,7 +191,7 @@ def manage_modbus_peripherals(peripherals):
     for per in peripherals:
         port = per.get("port", "nullport")
         interface = per.get("interface", "nullinterface")
-        identifier = "{}.{}.{}".format(port, interface, per.get("identifier"))
+        identifier = "modbus.{}.{}.{}".format(port, interface, per.get("identifier"))
         # Redefine the identifier
         per['identifier'] = identifier
 
