@@ -1,4 +1,10 @@
 # Changelog
+## [1.0.0] - 2020-04-15
+### Added
+### Changed
+- use internal NuvlaBox Agent API to manage modbus peripherals
+- remove nuvla-client apis
+- simplify code
 ## [0.0.2] - 2020-01-07
 ### Added 
 - wait for NuvlaBox contextualization 
