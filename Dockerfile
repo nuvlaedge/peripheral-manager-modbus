@@ -16,7 +16,7 @@ LABEL travis.build.web.url=${TRAVIS_BUILD_WEB_URL}
 
 RUN apk update && apk --no-cache add nmap=7.80-r1 nmap-scripts=7.80-r1
 
-COPY code/ /opt/nuvlabox/
+COPY code/ LICENSE /opt/nuvlabox/
 
 WORKDIR /opt/nuvlabox/
 
@@ -27,5 +27,7 @@ RUN wget https://svn.nmap.org/nmap/scripts/modbus-discover.nse && \
     wget https://raw.githubusercontent.com/mbs38/spicierModbus2mqtt/master/modbus2mqtt.py
 
 RUN rm -rf /var/cache/apk/*
+
+ONBUILD RUN ./license.sh
 
 ENTRYPOINT ["./modbus.py"]
