@@ -6,9 +6,6 @@ services:
     restart: on-failure
     volumes:
       - nuvlabox-db:/srv/nuvlabox/shared
-    environment:
-      - NUVLA_ENDPOINT=${NUVLA_ENDPOINT:-nuvla.io}
-      - NUVLA_ENDPOINT_INSECURE=${NUVLA_ENDPOINT_INSECURE:-False}
     labels:
       - nuvlabox.component=True
       - nuvlabox.deployment=production
