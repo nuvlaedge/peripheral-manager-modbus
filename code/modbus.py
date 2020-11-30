@@ -164,10 +164,16 @@ def wait_for_bootstrap():
 
     healthcheck_endpoint = "http://agent/api/healthcheck"
 
-    r = requests.get(healthcheck_endpoint)
-    while not r.ok:
-        time.sleep(5)
-        r = requests.get(healthcheck_endpoint)
+    while True:
+        try:
+            r = requests.get(healthcheck_endpoint)
+        except requests.exceptions.ConnectionError as e:
+            logging.warning(f'Unable to establish connection with NuvlaBox Agent: {e}. Will keep trying...')
+            time.sleep(5)
+            continue
+
+        if r.ok:
+            break
 
     return
 
