@@ -1,4 +1,9 @@
 # Changelog
+## [1.1.0] - 2020-12-04
+        ### Added 
+                  - re-use env vars persisted in volume
+        ### Changed
+                  - fit initial wait for NB bootstrap
 ## [1.0.1] - 2020-10-02
 ### Added 
 - ONBUILD SixSq license dump
