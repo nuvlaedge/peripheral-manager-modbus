@@ -47,15 +47,6 @@ Why? Because this microservice has been built to report directly to Nuvla. Every
  - *Docker Compose (version 1.23.2 or higher)*
  - *Linux*
 
-### Environment variables
-
-|                          	|                                                                                                                                                       	|
-|-------------------------	|------------------------------------------------------------------------------------------------------------------------------------------------------	|
-|           NUVLABOX_UUID 	| (**required**) before starting the microservice, make sure you export the ID of the NuvlaBox you've created through Nuvla: `export NUVLABOX_UUID=<nuvlabox id from nuvla>` 	|
-| NUVLA_ENDPOINT_INSECURE 	| if you're using an insecure Nuvla endpoint, set this to `True`: `export NUVLA_ENDPOINT_INSECURE=True`                                                	|
-|          NUVLA_ENDPOINT 	| if you're not using [nuvla.io](https://nuvla.io) then set this to your Nuvla endpoint: `export NUVLA_ENDPOINT=<your endpoint>`                                      	|
-| | |
-
 ### Launching the NuvlaBox Peripheral Manager for Modbus devices
 
 Simply run `docker-compose up --build`
