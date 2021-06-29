@@ -24,7 +24,10 @@ import requests
 import time
 from threading import Event
 
-api_endpoint = "http://agent/api/peripheral"
+KUBERNETES_SERVICE_HOST = os.getenv('KUBERNETES_SERVICE_HOST')
+namespace = os.getenv('MY_NAMESPACE', 'nuvlabox')
+agent_dns_name = 'agent' if not KUBERNETES_SERVICE_HOST else f'agent.{namespace}'
+api_endpoint = f"http://{agent_dns_name}/api/peripheral"
 
 
 def init_logger():
@@ -162,7 +165,7 @@ def wait_for_bootstrap():
 
     logging.info("Checking if NuvlaBox has been initialized...")
 
-    healthcheck_endpoint = "http://agent/api/healthcheck"
+    healthcheck_endpoint = f"http://{agent_dns_name}/api/healthcheck"
 
     while True:
         try:
