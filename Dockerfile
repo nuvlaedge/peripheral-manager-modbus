@@ -14,7 +14,7 @@ LABEL git.build.time=${GIT_BUILD_TIME}
 LABEL travis.build.number=${TRAVIS_BUILD_NUMBER}
 LABEL travis.build.web.url=${TRAVIS_BUILD_WEB_URL}
 
-RUN apk update && apk --no-cache add nmap=7.80-r2 nmap-scripts=7.80-r2
+RUN apk update && apk --no-cache add nmap=7.91-r0 nmap-scripts=7.91-r0
 
 COPY code/ LICENSE /opt/nuvlabox/
 
