@@ -1,4 +1,8 @@
 # Changelog
+## [1.2.0] - 2021-07-26
+        ### Added
+        ### Changed
+                  - repackage
 ## [1.1.1] - 2021-07-26
         ### Added 
                   - add support for execution in Kubernetes
