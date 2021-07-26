@@ -1,4 +1,8 @@
 # Changelog
+## [1.1.1] - 2021-07-26
+        ### Added 
+                  - add support for execution in Kubernetes
+        ### Changed
 ## [1.1.0] - 2020-12-04
         ### Added 
                   - re-use env vars persisted in volume
