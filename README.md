@@ -8,9 +8,7 @@
 [![Docker image size](https://img.shields.io/microbadger/image-size/nuvlabox/peripheral-manager-modbus?style=for-the-badge&logo=docker&logoColor=white)](https://cloud.docker.com/u/nuvlabox/repository/docker/nuvlabox/peripheral-manager-modbus)
 
 
-![CI Build](https://github.com/nuvlabox/peripheral-manager-modbus/actions/workflows/main.yml/badge.svg)
-![CI Release](https://github.com/nuvlabox/peripheral-manager-modbus/actions/workflows/release.yml/badge.svg)
-
+[![CI](https://img.shields.io/travis/com/nuvlabox/peripheral-manager-modbus?style=for-the-badge&logo=travis-ci&logoColor=white)](https://travis-ci.com/nuvlabox/peripheral-manager-modbus)
 
 
 **This repository contains the source code for the NuvlaBox Peripheral Manager for Modbus devices - this microservice is responsible for the discovery, categorization and management of all [NuvlaBox](https://sixsq.com/products-and-services/nuvlabox/overview) Modbus peripherals.**
