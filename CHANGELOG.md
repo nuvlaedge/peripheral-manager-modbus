@@ -1,4 +1,8 @@
 # Changelog
+## [1.2.1] - 2021-08-12
+        ### Added
+        ### Changed
+                  - fix parent image to alpine 3.12
 ## [1.2.0] - 2021-07-26
         ### Added
         ### Changed
