@@ -6,7 +6,7 @@
     <groupId>sixsq.nuvlabox.peripheral-manager-modbus</groupId>
     <artifactId>peripheral-manager-modbus</artifactId>
     <packaging>pom</packaging>
-    <version>1.2.2-SNAPSHOT</version>
+    <version>1.2.2</version>
     <name>peripheral-manager-modbus</name>
     <url>http://sixsq.com/</url>
 
@@ -184,7 +184,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>1.6.0</version>
                 <executions>
-                  
+
                     <execution>
                         <id>default-build</id>
                         <phase>install</phase>
@@ -199,7 +199,7 @@
                               <DOCKER_ORG>${docker-organization}</DOCKER_ORG>
                               <DOCKER_IMAGE>peripheral-manager-modbus</DOCKER_IMAGE>
                               <DOCKER_TAG>${docker-tag}</DOCKER_TAG>
-                            
+
                               <GIT_BRANCH>${git.branch.selected}</GIT_BRANCH>
                               <GIT_COMMIT_ID>${git.commit.id}</GIT_COMMIT_ID>
                               <GIT_DIRTY>${git.dirty}</GIT_DIRTY>
@@ -209,7 +209,7 @@
                             </environmentVariables>
                         </configuration>
                     </execution>
-                    
+
                     <execution>
                         <id>default-push</id>
                         <phase>deploy</phase>
