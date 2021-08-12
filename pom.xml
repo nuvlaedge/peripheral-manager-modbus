@@ -6,7 +6,7 @@
     <groupId>sixsq.nuvlabox.peripheral-manager-modbus</groupId>
     <artifactId>peripheral-manager-modbus</artifactId>
     <packaging>pom</packaging>
-    <version>1.2.3</version>
+    <version>1.2.4-SNAPSHOT</version>
     <name>peripheral-manager-modbus</name>
     <url>http://sixsq.com/</url>
 
