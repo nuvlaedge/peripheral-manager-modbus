@@ -1,4 +1,8 @@
 # Changelog
+## [1.2.3] - 2021-08-12
+        ### Added
+        ### Changed
+                  - ignore DL3018 on build
 ## [1.2.2] - 2021-08-12
         ### Added
         ### Changed
