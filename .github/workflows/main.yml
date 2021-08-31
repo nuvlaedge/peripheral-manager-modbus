@@ -1,0 +1,58 @@
+name: "NuvlaBox Component Build"
+
+on: 
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - '*.*.*'
+  pull_request:
+  workflow_dispatch:
+    
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Multi-arch docker image build prerequired
+        run: sudo docker run --privileged linuxkit/binfmt:v0.7
+
+      - name: Build and deploy on architecture
+        env:
+          DOCKER_USERNAME: ${{ secrets.SIXSQ_DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.SIXSQ_DOCKER_PASSWORD }}
+        run: ./container-release.sh
+
+      - name: Get component dependencies
+        run: ./get-dependencies-tree.sh
+
+      - name: Keep list of dependencies as an artifact
+        uses: actions/upload-artifact@v2
+        if: ${{ success() }}
+        with:
+          name: dependencies
+          path: |
+            dependencies-tree.png
+            dependencies-licenses.txt
+
+  notify:
+    if: always()
+    name: Post Workflow Status To Slack
+    needs:
+      - build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Slack Workflow Notification
+        uses: Gamesight/slack-workflow-status@master
+        with:
+          # Required Input
+          repo_token: ${{secrets.GITHUB_TOKEN}}
+          slack_webhook_url: ${{secrets.SLACK_WEBHOOK_URL}}
+          # Optional Input
+          icon_emoji: ':ghost:'
