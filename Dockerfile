@@ -1,4 +1,5 @@
-FROM python:3-alpine3.12
+ARG BASE_IMAGE=python:3.8-alpine3.12
+FROM ${BASE_IMAGE}
 
 ARG GIT_BRANCH
 ARG GIT_COMMIT_ID
@@ -28,8 +29,8 @@ WORKDIR /opt/nuvlabox/
 RUN pip install -r requirements.txt
 
 RUN wget https://svn.nmap.org/nmap/scripts/modbus-discover.nse && \
-    wget https://raw.githubusercontent.com/mbs38/spicierModbus2mqtt/master/addToHomeAssistant.py && \
-    wget https://raw.githubusercontent.com/mbs38/spicierModbus2mqtt/master/modbus2mqtt.py
+    wget https://raw.githubusercontent.com/mbs38/spicierModbus2mqtt/master/modbus2mqtt/addToHomeAssistant.py && \
+    wget https://raw.githubusercontent.com/mbs38/spicierModbus2mqtt/master/modbus2mqtt/modbus2mqtt.py
 
 RUN rm -rf /var/cache/apk/*
 
