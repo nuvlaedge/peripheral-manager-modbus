@@ -5,8 +5,7 @@ services:
     build: .
     restart: on-failure
     volumes:
-      - nuvlabox-db:/srv/nuvlabox/shared
+      - nuvlabox-db:/srv/nuvlaedge/shared
     labels:
-      - nuvlabox.component=True
-      - nuvlabox.deployment=production
-
+      - nuvlaedge.component=True
+      - nuvlaedge.deployment=production

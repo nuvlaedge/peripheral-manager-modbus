@@ -17,14 +17,14 @@ LABEL org.opencontainers.image.authors="support@sixsq.com"
 LABEL org.opencontainers.image.created=${GIT_BUILD_TIME}
 LABEL org.opencontainers.image.url=${PROJECT_URL}
 LABEL org.opencontainers.image.vendor="SixSq SA"
-LABEL org.opencontainers.image.title="NuvlaBox Peripheral Manager Modbus"
-LABEL org.opencontainers.image.description="Finds and identifies Modbus peripherals around the NuvlaBox"
+LABEL org.opencontainers.image.title="NuvlaEdge Peripheral Manager Modbus"
+LABEL org.opencontainers.image.description="Finds and identifies Modbus peripherals around the NuvlaEdge"
 
 RUN apk update && apk --no-cache add nmap nmap-scripts
 
-COPY code/ LICENSE /opt/nuvlabox/
+COPY code/ LICENSE /opt/nuvlaedge/
 
-WORKDIR /opt/nuvlabox/
+WORKDIR /opt/nuvlaedge/
 
 RUN pip install -r requirements.txt
 

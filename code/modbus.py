@@ -2,11 +2,11 @@
 
 # -*- coding: utf-8 -*-
 
-"""NuvlaBox Peripheral Manager Modbus
+"""NuvlaEdge Peripheral Manager Modbus
 
 This service takes care of the discovery and overall
 management of Modbus peripherals that are attached to
-the NuvlaBox.
+the NuvlaEdge.
 
 It provides:
  - automatic discovery and reporting of Modbus peripherals
@@ -25,7 +25,7 @@ import time
 from threading import Event
 
 KUBERNETES_SERVICE_HOST = os.getenv('KUBERNETES_SERVICE_HOST')
-namespace = os.getenv('MY_NAMESPACE', 'nuvlabox')
+namespace = os.getenv('MY_NAMESPACE', 'nuvlaedge')
 agent_dns_name = 'agent' if not KUBERNETES_SERVICE_HOST else f'agent.{namespace}'
 api_endpoint = f"http://{agent_dns_name}/api/peripheral"
 
@@ -61,7 +61,7 @@ def get_default_gateway_ip():
 
 
 def scan_open_ports(host, modbus_nse="modbus-discover.nse", xml_file="/tmp/nmap_scan.xml"):
-    """ Uses nmap to scan all the open ports in the NuvlaBox.
+    """ Uses nmap to scan all the open ports in the NuvlaEdge.
         Writes the output into an XML file.
 
     :param host: IP of the host to be scanned
@@ -105,7 +105,7 @@ def parse_modbus_peripherals(namp_xml_output):
     try:
         all_ports = namp_odict['nmaprun']['host']['ports']['port']
     except KeyError:
-        logging.warning("Cannot find any open ports in this NuvlaBox")
+        logging.warning("Cannot find any open ports in this NuvlaEdge")
         return modbus
     except:
         logging.exception("Unknown error while processing ports scan")
@@ -158,12 +158,12 @@ def parse_modbus_peripherals(namp_xml_output):
 
 
 def wait_for_bootstrap():
-    """ Simply waits for the NuvlaBox to finish bootstrapping, by pinging the Agent API
+    """ Simply waits for the NuvlaEdge to finish bootstrapping, by pinging the Agent API
 
     :returns
     """
 
-    logging.info("Checking if NuvlaBox has been initialized...")
+    logging.info("Checking if NuvlaEdge has been initialized...")
 
     healthcheck_endpoint = f"http://{agent_dns_name}/api/healthcheck"
 
@@ -171,7 +171,7 @@ def wait_for_bootstrap():
         try:
             r = requests.get(healthcheck_endpoint)
         except requests.exceptions.ConnectionError as e:
-            logging.warning(f'Unable to establish connection with NuvlaBox Agent: {e}. Will keep trying...')
+            logging.warning(f'Unable to establish connection with NuvlaEdge Agent: {e}. Will keep trying...')
             time.sleep(5)
             continue
 
@@ -215,7 +215,7 @@ def manage_modbus_peripherals(peripherals):
             try:
                 nuvla_peripheral_id = requests.post(api_endpoint, json=per).json()["resource-id"]
 
-                logging.info("Created new NuvlaBox Modbus peripheral {} with ID {}".format(identifier,
+                logging.info("Created new NuvlaEdge Modbus peripheral {} with ID {}".format(identifier,
                                                                                            nuvla_peripheral_id))
             except:
                 logging.exception("Cannot create Modbus peripheral {} in Nuvla...moving on".format(identifier))
@@ -247,5 +247,3 @@ if __name__ == "__main__":
         manage_modbus_peripherals(all_modbus_devices)
 
         e.wait(timeout=90)
-
-
