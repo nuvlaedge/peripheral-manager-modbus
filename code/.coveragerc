@@ -1,0 +1,6 @@
+[run]
+relative_files = True
+include =
+  modbus/*
+  tests/*
+branch = True
