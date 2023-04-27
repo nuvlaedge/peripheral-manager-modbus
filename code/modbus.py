@@ -20,14 +20,8 @@ import os
 import xmltodict
 import logging
 import sys
-import requests
-import time
-from threading import Event
 
-KUBERNETES_SERVICE_HOST = os.getenv('KUBERNETES_SERVICE_HOST')
-namespace = os.getenv('MY_NAMESPACE', 'nuvlaedge')
-agent_dns_name = 'agent' if not KUBERNETES_SERVICE_HOST else f'agent.{namespace}'
-api_endpoint = f"http://{agent_dns_name}/api/peripheral"
+from nuvlaedge.peripherals.peripheral import Peripheral
 
 
 def init_logger():
@@ -157,36 +151,10 @@ def parse_modbus_peripherals(namp_xml_output):
     return modbus
 
 
-def wait_for_bootstrap():
-    """ Simply waits for the NuvlaEdge to finish bootstrapping, by pinging the Agent API
-
-    :returns
-    """
-
-    logging.info("Checking if NuvlaEdge has been initialized...")
-
-    healthcheck_endpoint = f"http://{agent_dns_name}/api/healthcheck"
-
-    while True:
-        try:
-            r = requests.get(healthcheck_endpoint)
-        except requests.exceptions.ConnectionError as e:
-            logging.warning(f'Unable to establish connection with NuvlaEdge Agent: {e}. Will keep trying...')
-            time.sleep(5)
-            continue
-
-        if r.ok:
-            break
-
-    return
-
-
-def manage_modbus_peripherals(peripherals):
+def manage_modbus_peripherals(ip_address):
     """ Takes care of posting or deleting the respective
     NB peripheral resources from Nuvla
-
-    :param peripherals_path: base path for the NB shared directory
-    :param peripherals: list of dict, one for each discovered modbus slave
+    :param ip_address:
     """
 
     # local file naming convention:
@@ -194,56 +162,30 @@ def manage_modbus_peripherals(peripherals):
 
     modbus_identifier_pattern = "modbus.*"
     # Ask the NB agent for all modbus peripherals matching this pattern
-    get_modbus_peripherals = requests.get(api_endpoint + '?identifier_pattern=' + modbus_identifier_pattern)
-    if not get_modbus_peripherals.ok or not isinstance(get_modbus_peripherals.json(), list):
-        return
 
-    local_modbus_peripherals = get_modbus_peripherals.json()
-    for per in peripherals:
+    xml_file = scan_open_ports(ip_address)
+    with open(xml_file) as ox:
+        namp_xml_output = ox.read()
+
+    all_modbus_devices = parse_modbus_peripherals(namp_xml_output)
+
+    for per in all_modbus_devices:
         port = per.get("port", "nullport")
         interface = per.get("interface", "nullinterface")
         identifier = "modbus.{}.{}.{}".format(port, interface, per.get("identifier"))
         # Redefine the identifier
         per['identifier'] = identifier
 
-        if identifier in local_modbus_peripherals:
-            # device is discovered, and already reported, so nothing to do here
-            local_modbus_peripherals.remove(identifier)
-        else:
-            # filename is not saved locally, which means it is newly discovered
-            # thus report to Nuvla
-            try:
-                nuvla_peripheral_id = requests.post(api_endpoint, json=per).json()["resource-id"]
-
-                logging.info("Created new NuvlaEdge Modbus peripheral {} with ID {}".format(identifier,
-                                                                                           nuvla_peripheral_id))
-            except:
-                logging.exception("Cannot create Modbus peripheral {} in Nuvla...moving on".format(identifier))
-
-    for old_modbus_file in local_modbus_peripherals:
-        # the leftover files are devices that have not been detected anymore,
-        # and thus should be deleted
-        r = requests.delete(api_endpoint + "/" + old_modbus_file)
-
 
 if __name__ == "__main__":
 
     init_logger()
 
-    wait_for_bootstrap()
-
     gateway_ip = get_default_gateway_ip()
 
-    # Runs the modbus discovery functions periodically
-    e = Event()
+    modbus_peripheral: Peripheral = Peripheral('modbus')
 
-    while True:
-        xml_file = scan_open_ports(gateway_ip)
-        with open(xml_file) as ox:
-            namp_xml_output = ox.read()
+    modbus_peripheral.run(manage_modbus_peripherals, ip_address=gateway_ip)
 
-        all_modbus_devices = parse_modbus_peripherals(namp_xml_output)
 
-        manage_modbus_peripherals(all_modbus_devices)
 
-        e.wait(timeout=90)
