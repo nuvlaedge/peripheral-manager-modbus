@@ -1,3 +1,9 @@
+# :information_source: This component has moved :arrow_right:
+
+It is now part of :point_right: [nuvlaedge/nuvlaedge](https://github.com/nuvlaedge/nuvlaedge) 👈.
+
+---
+
 # NuvlaEdge Peripheral Manager for Modbus devices
 
 **NOTE:** only compatible with TCP mode
